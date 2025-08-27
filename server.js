@@ -37,8 +37,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             sort: {
               type: 'string',
-              description: 'Sort order: PUBLISHED_DESC (newest), PUBLISHED_ASC (oldest), PRICE_ASC (cheapest), PRICE_DESC (most expensive)',
-              enum: ['PUBLISHED_DESC', 'PUBLISHED_ASC', 'PRICE_ASC', 'PRICE_DESC']
+              description: 'Sort order: RELEVANCE (default), PUBLISHED_DESC (newest), PUBLISHED_ASC (oldest), PRICE_ASC (cheapest), PRICE_DESC (most expensive), CLOSEST (requires lat/lon)',
+              enum: ['RELEVANCE', 'PUBLISHED_DESC', 'PUBLISHED_ASC', 'PRICE_ASC', 'PRICE_DESC', 'CLOSEST']
             },
             clothing_size: {
               type: 'string',
@@ -62,9 +62,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             trade_type: {
               type: 'number',
-              description: 'Trade type: 1=Til salgs (for sale), 2=Gis bort (free), 3=Ønskes kjøpt (wanted)',
-              enum: [1, 2, 3],
-              default: 1
+              description: 'Trade type: 1=Til salgs (for sale), 2=Gis bort (giving away/free), 3=Ønskes kjøpt (wanted)',
+              enum: [1, 2, 3]
+            },
+            dealer_segment: {
+              type: 'array',
+              items: {
+                type: 'number',
+                enum: [1, 3]
+              },
+              description: 'Seller type filter: 1=Private individuals, 3=Businesses/dealers. Can specify multiple.'
             },
             lat: {
               type: 'number',
@@ -135,6 +142,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.trade_type) {
           params.append('trade_type', args.trade_type.toString());
         }
+        if (args.dealer_segment && Array.isArray(args.dealer_segment)) {
+          args.dealer_segment.forEach(segment => {
+            params.append('dealer_segment', segment.toString());
+          });
+        }
         if (args.lat) {
           params.append('lat', args.lat.toString());
         }
@@ -183,18 +195,43 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           const location = locationAndTime.first().text().trim();
           const timeAgo = locationAndTime.last().text().trim();
           
-          const sizeAndBrand = $el.find('.flex.flex-wrap.mt-4.text-xs span').map((_, span) => $(span).text().trim()).get();
+          const imageEl = $el.find('img').first();
+          const imageSrc = imageEl.attr('src');
+          
+          const sizeAndBrand = $el.find('.flex.flex-wrap.mt-4.text-xs span')
+            .filter((_, span) => {
+              const text = $(span).text().trim();
+              return text.startsWith('Str.') || 
+                     (!text.includes('siden') && !text.includes('Kjøp') && text.length > 0);
+            })
+            .map((_, span) => $(span).text().trim().replace(/^Str\.\s*/, ''))
+            .get()
+            .filter(text => text && !locationAndTime.toArray().some(el => $(el).text().trim() === text));
           
           if (finnCode && title) {
-            results.push({
+            const result = {
               finn_code: finnCode,
               title,
               price: price || 'No price listed',
               location: location || 'No location',
               time_ago: timeAgo || '',
-              size_and_brand: sizeAndBrand.length > 0 ? sizeAndBrand : [],
               url: href.startsWith('http') ? href : `https://www.finn.no${href}`
-            });
+            };
+            
+            if (imageSrc) {
+              result.image = imageSrc;
+            }
+            
+            if (sizeAndBrand.length === 1 && sizeAndBrand[0]) {
+              result.size = sizeAndBrand[0];
+            } else if (sizeAndBrand.length === 2) {
+              result.size = sizeAndBrand[0];
+              result.brand = sizeAndBrand[1];
+            } else if (sizeAndBrand.length > 0) {
+              result.attributes = sizeAndBrand;
+            }
+            
+            results.push(result);
           }
         });
         
