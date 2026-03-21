@@ -2,14 +2,17 @@
   "name": "finn-mcp-server",
   "version": "1.0.0",
   "description": "MCP server for interacting with FINN.no marketplace",
-  "main": "server.js",
+  "main": "src/server.js",
   "bin": {
-    "finn-mcp-server": "./server.js"
+    "finn-mcp-server": "./src/server.js"
   },
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "lint": "biome check",
+    "format": "biome check --write"
   },
   "keywords": [
     "mcp",
