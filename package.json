@@ -11,7 +11,13 @@
     "start": "node server.js",
     "dev": "node --watch server.js"
   },
-  "keywords": ["mcp", "finn", "marketplace", "norway", "server"],
+  "keywords": [
+    "mcp",
+    "finn",
+    "marketplace",
+    "norway",
+    "server"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/viktorfa/finn_mcp.git"
@@ -21,9 +27,9 @@
   },
   "homepage": "https://github.com/viktorfa/finn_mcp#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.0",
-    "node-fetch": "^3.3.2",
-    "cheerio": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "cheerio": "^1.2.0",
+    "node-fetch": "^3.3.2"
   },
   "engines": {
     "node": ">=18.0.0"
