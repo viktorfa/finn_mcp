@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import { parseItemDetails, parseSearchResults } from "../src/parse.js";
+import { parseItemDetails, parseSearchResults } from "../src/torget-parse.js";
 
 const searchHtml = readFileSync(new URL("./fixtures/search.html", import.meta.url), "utf-8");
 const itemHtml = readFileSync(new URL("./fixtures/item.html", import.meta.url), "utf-8");

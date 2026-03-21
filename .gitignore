@@ -1,3 +1,6 @@
+# Local MCP config (contains absolute paths)
+.mcp.json
+
 # Dependencies
 node_modules/
 npm-debug.log*
