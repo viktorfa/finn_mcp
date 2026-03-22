@@ -32,6 +32,7 @@ export function registerTorgetTools(server) {
         trade_type: z.string().optional().describe("Trade type: 1=Til salgs, 2=Gis bort, 3=Ønskes kjøpt"),
         dealer_segment: z.array(z.string()).optional().describe("Seller type: 1=Privat, 3=Forhandler"),
         clothing_size: z.string().optional().describe("Clothing size (XS, S, M, L, XL, 2XL, etc.)"),
+        shoe_size: z.coerce.number().optional().describe("Shoe size (EU sizing, e.g. 42, 43, 44, 45)"),
         colour: z
           .array(z.string())
           .optional()
@@ -68,6 +69,7 @@ export function registerTorgetTools(server) {
           for (const s of args.dealer_segment) params.append("dealer_segment", s);
         }
         if (args.clothing_size) params.append("clothing_size", args.clothing_size);
+        if (args.shoe_size) params.append("shoe_size", args.shoe_size.toString());
         if (args.colour) {
           for (const c of args.colour) params.append("colour", c);
         }
