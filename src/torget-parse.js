@@ -103,21 +103,15 @@ export function parseItemDetails(html) {
       .text()
       .trim();
 
-  const condition = $("span")
-    .filter((_, el) => $(el).text().includes("Tilstand"))
-    .find("b")
-    .text()
-    .trim();
-  const size = $("span")
-    .filter((_, el) => $(el).text().includes("Størrelse"))
-    .find("b")
-    .text()
-    .trim();
-  const color = $("span")
-    .filter((_, el) => $(el).text().includes("Farge"))
-    .find("b")
-    .text()
-    .trim();
+  const keyInfo = {};
+  $('section[aria-label="Nøkkelinfo"] span p').each((_, el) => {
+    const text = $(el).text().trim();
+    const bold = $(el).find("b").text().trim();
+    const label = text.replace(bold, "").replace(/:\s*$/, "").trim();
+    if (label && bold) {
+      keyInfo[label] = bold;
+    }
+  });
 
   const images = [];
   $('img[data-testid^="image-"]').each((_, el) => {
@@ -130,11 +124,6 @@ export function parseItemDetails(html) {
       }
     }
   });
-
-  const keyInfo = {};
-  if (condition) keyInfo.condition = condition;
-  if (size) keyInfo.size = size;
-  if (color) keyInfo.color = color;
 
   return { title, price, description, location, seller, key_info: keyInfo, images: images.slice(0, 8) };
 }
