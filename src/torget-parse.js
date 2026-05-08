@@ -1,82 +1,51 @@
 import * as cheerio from "cheerio";
 
 export function parseSearchResults(html) {
-  const $ = cheerio.load(html);
-  const results = [];
+  const data = extractDehydratedTanstack(html);
+  if (!data) return [];
 
-  $("article.sf-search-ad").each((_, element) => {
-    const $el = $(element);
-    const linkEl = $el.find("a.sf-search-ad-link").first();
-    const href = linkEl.attr("href");
-    let finnCode = null;
+  const docsQuery = data.queries?.find((q) => q.queryKey?.[0]?.scope === "search" && q.state?.data?.docs);
+  const docs = docsQuery?.state?.data?.docs ?? [];
 
-    if (href) {
-      if (href.includes("/recommerce/forsale/item/")) {
-        finnCode = href.split("/").pop();
-      } else if (href.includes("finnkode=")) {
-        finnCode = href.split("finnkode=")[1];
-      }
+  return docs.map((doc) => {
+    const finnCode = String(doc.id || doc.ad_id);
+    const url = doc.canonical_url || `https://www.finn.no/recommerce/forsale/item/${finnCode}`;
+    const result = {
+      finn_code: finnCode,
+      title: doc.heading,
+      price: doc.price ? `${doc.price.amount} ${doc.price.currency_code || "NOK"}` : "No price listed",
+      location: doc.location || "No location",
+      url,
+    };
+
+    if (doc.trade_type) result.trade_type = doc.trade_type;
+
+    const imageUrl = doc.image?.url || (Array.isArray(doc.image_urls) ? doc.image_urls[0] : null);
+    if (imageUrl) result.image = imageUrl;
+
+    if (Array.isArray(doc.labels) && doc.labels.length > 0) {
+      const labels = doc.labels.map((l) => l.text).filter(Boolean);
+      if (labels.length > 0) result.labels = labels;
     }
 
-    const title = linkEl.text().trim();
-    const price =
-      $el.find(".flex.justify-between.font-bold span").first().text().trim() ||
-      $el
-        .find("span")
-        .filter((_, span) => /\d+\s*kr/.test($(span).text()))
-        .first()
-        .text()
-        .trim();
-    const locationAndTime = $el.find(".s-text-subtle .whitespace-nowrap");
-    const location = locationAndTime.first().text().trim();
-    const timeAgo = locationAndTime.last().text().trim();
-
-    const imageEl = $el.find("img").first();
-    const imageSrc = imageEl.attr("src");
-
-    const sizeAndBrand = $el
-      .find(".flex.flex-wrap.mt-4.text-xs span")
-      .filter((_, span) => {
-        const text = $(span).text().trim();
-        return text.startsWith("Str.") || (!text.includes("siden") && !text.includes("Kjøp") && text.length > 0);
-      })
-      .map((_, span) =>
-        $(span)
-          .text()
-          .trim()
-          .replace(/^Str\.\s*/, ""),
-      )
-      .get()
-      .filter((text) => text && !locationAndTime.toArray().some((el) => $(el).text().trim() === text));
-
-    if (finnCode && title) {
-      const result = {
-        finn_code: finnCode,
-        title,
-        price: price || "No price listed",
-        location: location || "No location",
-        time_ago: timeAgo || "",
-        url: href.startsWith("http") ? href : `https://www.finn.no${href}`,
-      };
-
-      if (imageSrc) {
-        result.image = imageSrc;
-      }
-
-      if (sizeAndBrand.length === 1 && sizeAndBrand[0]) {
-        result.size = sizeAndBrand[0];
-      } else if (sizeAndBrand.length === 2) {
-        result.size = sizeAndBrand[0];
-        result.brand = sizeAndBrand[1];
-      } else if (sizeAndBrand.length > 0) {
-        result.attributes = sizeAndBrand;
-      }
-
-      results.push(result);
-    }
+    return result;
   });
+}
 
-  return results;
+function extractDehydratedTanstack(html) {
+  const scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi;
+  for (const match of html.matchAll(scriptRegex)) {
+    const content = match[1].trim();
+    if (!content.startsWith("ey") || content.length < 5000) continue;
+    try {
+      const decoded = Buffer.from(content, "base64").toString("utf-8");
+      const data = JSON.parse(decoded);
+      if (data.queries) return data;
+    } catch {
+      // not valid base64/JSON
+    }
+  }
+  return null;
 }
 
 export function parseItemDetails(html) {

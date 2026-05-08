@@ -126,6 +126,61 @@ export function registerMobilityTools(server) {
   );
 
   server.registerTool(
+    "search_finn_b2b",
+    {
+      description:
+        "Search FINN.no Næring (B2B) for commercial vehicles and machinery: excavators, forklifts, trucks, buses, tractors, harvesters, agricultural tools. Returns listings with price, year, make, model, location.\n\n" +
+        "Construction segments (use with subvertical='construction'): 8003=Gravemaskin (excavator), 8005=Gaffeltruck (forklift), 8004=Hjullaster (wheel loader), 8001=Dumper, 8002=Veihøvel, 8006=Tilhenger, 8007=Tilbehør.\n\n" +
+        "Common construction make codes: Kubota=8034, Cat=8017, Hitachi=8025, Volvo=190, Komatsu=8033, Kobelco=8031, Takeuchi=8051, Liebherr=8036, Doosan=8340, Toyota=8264 (forklift), Bobcat=8015, Linde=460, Hyster=510, Andre=200.",
+      inputSchema: {
+        subvertical: z
+          .enum(["construction", "truck", "bus", "agriculturetractor", "agriculturecombines", "agriculturetools"])
+          .describe(
+            "B2B subvertical: 'construction' for excavators/forklifts/loaders, 'truck' for lastebil, 'bus' for buss, 'agriculturetractor' for landbrukstraktor, 'agriculturecombines' for skurtreskere, 'agriculturetools' for landbruksredskap",
+          ),
+        query: z.string().optional().describe("Free-text search query (e.g. 'minigraver')"),
+        page: z.coerce.number().optional().describe("Page number"),
+        sort: z
+          .enum(["RELEVANCE", "CLOSEST", "PUBLISHED_DESC", "PRICE_ASC", "PRICE_DESC", "YEAR_ASC", "YEAR_DESC"])
+          .optional()
+          .describe("Sort order"),
+        price_from: z.coerce.number().optional().describe("Minimum price (NOK)"),
+        price_to: z.coerce.number().optional().describe("Maximum price (NOK)"),
+        year_from: z.coerce.number().optional().describe("Minimum model year"),
+        year_to: z.coerce.number().optional().describe("Maximum model year"),
+        engine_effect_from: z.coerce.number().optional().describe("Minimum engine power (HP)"),
+        engine_effect_to: z.coerce.number().optional().describe("Maximum engine power (HP)"),
+        dealer_segment: z.string().optional().describe("Seller type ('Privat' or 'Forhandler')"),
+        construction_segment: z
+          .string()
+          .optional()
+          .describe(
+            "Sub-type code, only for subvertical='construction'. 8003=Gravemaskin, 8005=Gaffeltruck, 8004=Hjullaster, 8001=Dumper",
+          ),
+        make: z
+          .string()
+          .optional()
+          .describe(
+            "Make code (depends on subvertical). For construction excavators: Kubota=8034, Cat=8017, Hitachi=8025, Volvo=190, Komatsu=8033, Takeuchi=8051",
+          ),
+      },
+    },
+    async (args) => {
+      try {
+        const extra = {};
+        if (args.engine_effect_from) extra.engine_effect_from = args.engine_effect_from;
+        if (args.engine_effect_to) extra.engine_effect_to = args.engine_effect_to;
+        if (args.construction_segment) extra.construction_segment = args.construction_segment;
+        if (args.make) extra.make = args.make;
+        const data = await searchMobility(`b2b/${args.subvertical}`, args, extra);
+        return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: "text", text: `Error searching FINN B2B: ${error.message}` }], isError: true };
+      }
+    },
+  );
+
+  server.registerTool(
     "get_finn_mobility_item",
     {
       description:
