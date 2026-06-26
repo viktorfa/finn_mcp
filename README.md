@@ -20,6 +20,11 @@ A Model Context Protocol (MCP) server for searching and browsing Norwegian marke
 - **Destination autocomplete** to discover locations and result counts
 - **Property details** including pricing, beds, facilities, house rules, and images
 
+### FINN.no Eiendom (real estate)
+- **Search** homes for sale with filters for location, property type, price, size, bedrooms, facilities (parking, balcony, etc.), and sorting by price per m²
+- **Location lookup** to discover area codes before searching
+- **Property details** including price, address, size, bedrooms, description, and images
+
 ### Klarna Price Guide (prisguiden.no)
 - **Search** for new products across Norwegian retailers with lowest prices and price drop alerts
 - **Product details** with all merchant offers sorted by price, and price trend data
@@ -78,6 +83,7 @@ Config file locations:
 - "Find electric cars under 300k on FINN"
 - "Search for cabincruiser boats over 25 feet"
 - "Find holiday cabins in Lofoten"
+- "Find the cheapest apartment per m² in Forus with parking on FINN Eiendom"
 - "Compare prices for Raspberry Pi 4 on Klarna"
 - "Get details for FINN item 343932826"
 
