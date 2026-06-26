@@ -4,6 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { registerHolidayTools } from "./tools/holiday.js";
 import { registerKlarnaTools } from "./tools/klarna.js";
 import { registerMobilityTools } from "./tools/mobility.js";
+import { registerRealestateTools } from "./tools/realestate.js";
 import { registerTorgetTools } from "./tools/torget.js";
 
 const server = new McpServer({
@@ -13,6 +14,7 @@ const server = new McpServer({
 
 registerTorgetTools(server);
 registerMobilityTools(server);
+registerRealestateTools(server);
 registerHolidayTools(server);
 registerKlarnaTools(server);
 
