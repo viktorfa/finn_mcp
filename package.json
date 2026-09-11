@@ -34,11 +34,11 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
     "cheerio": "^1.2.0",
-    "zod": "^4.3.6"
+    "zod": "^4.5.4"
   },
   "author": "viktorfa",
   "license": "MIT",
   "devDependencies": {
-    "@biomejs/biome": "^2.4.8"
+    "@biomejs/biome": "^2.5.12"
   }
 }
