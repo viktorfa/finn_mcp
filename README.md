@@ -26,6 +26,31 @@ A Model Context Protocol (MCP) server for searching and browsing Norwegian marke
 
 ## Usage
 
+### CLI
+
+The CLI exposes the same tools and parameters as the MCP server, without starting a server.
+Run it from the checkout with `node src/cli.js` (or `pnpm cli`). Installing the package exposes the `finn` command.
+
+```bash
+node src/cli.js --help
+node src/cli.js search_finn_torget --help
+node src/cli.js search_finn_torget --query "harrington" --price_to 1500 --shipping
+node src/cli.js get_finn_torget_item --finn_code 343932826
+node src/cli.js search_finn_cars --fuel Elektrisk --price_to 300000
+node src/cli.js search_klarna --query "FiiO K11"
+```
+
+Parameter names match MCP inputs, including underscores. Repeat array flags, for example
+`--condition 2 --condition 3`. Boolean flags such as `--shipping` enable the filter;
+omit them to leave it off. For structured inputs, use `--json` instead of parameter flags:
+
+```bash
+node src/cli.js search_finn_torget --json '{"query":"jakke","condition":["2","3"]}'
+```
+
+Successful calls print JSON to stdout for piping into tools such as `jq`.
+Errors go to stderr and exit with status 1. Help is generated from the shared tool schemas.
+
 ### Claude Code
 
 Add to `.mcp.json` in your project root (or `~/.claude/.mcp.json` for global access):
