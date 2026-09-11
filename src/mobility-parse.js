@@ -1,11 +1,8 @@
 import * as cheerio from "cheerio";
+import { extractFinnSearchData } from "./finn-search-data.js";
 
 export function parseMobilitySearchResults(html) {
-  const data = extractDehydratedTanstack(html);
-  if (!data) return [];
-
-  const docsQuery = data.queries?.find((q) => q.state?.data?.docs);
-  const docs = docsQuery?.state?.data?.docs ?? [];
+  const docs = extractFinnSearchData(html)?.docs ?? [];
 
   return docs.map((doc) => {
     const result = {
@@ -87,21 +84,4 @@ export function parseMobilityItemDetail(html) {
     description: description || null,
     location: location || null,
   };
-}
-
-function extractDehydratedTanstack(html) {
-  const scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi;
-  for (const match of html.matchAll(scriptRegex)) {
-    const content = match[1].trim();
-    // Base64-encoded TanStack data starts with "ey" (base64 for "{")
-    if (!content.startsWith("ey") || content.length < 10000) continue;
-    try {
-      const decoded = Buffer.from(content, "base64").toString("utf-8");
-      const data = JSON.parse(decoded);
-      if (data.queries) return data;
-    } catch {
-      // not valid base64/JSON
-    }
-  }
-  return null;
 }

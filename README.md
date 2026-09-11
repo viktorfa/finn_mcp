@@ -106,6 +106,20 @@ Config file locations:
 - "Compare prices for Raspberry Pi 4 on Klarna"
 - "Get details for FINN item 343932826"
 
+## Search result counts
+
+FINN searches (Torget, cars, boats, and B2B) return:
+
+- `total_results`: total matches reported by FINN, across pages.
+- `page`: current page reported by FINN.
+- `total_pages`: last accessible page reported by FINN; upstream paging limits may prevent browsing every match.
+- `results_on_page`: number of entries in the returned `results` array.
+
+Missing or invalid pagination metadata is `null`; it is never inferred from the returned list length.
+Klarna searches return `results_on_page` only, since the parsed payload provides no verified total.
+These fields apply to both the CLI and MCP. Consumers that previously used `total_results`
+as a page count should use `results_on_page` instead.
+
 ## Development
 
 ```bash

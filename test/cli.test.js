@@ -54,6 +54,10 @@ test("CLI flags and JSON produce identical results through the marketplace handl
   assert.equal(flags.stdout, json.stdout);
   assert.equal(flags.stderr, "");
   const result = JSON.parse(flags.stdout);
+  assert.equal(result.total_results, 3917);
+  assert.equal(result.page, 1);
+  assert.equal(result.total_pages, 50);
+  assert.equal(result.results_on_page, result.results.length);
   const url = new URL(result.search_url);
   assert.equal(url.searchParams.get("price_to"), "1500");
   assert.deepEqual(url.searchParams.getAll("condition"), ["2", "3"]);

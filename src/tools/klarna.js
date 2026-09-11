@@ -22,7 +22,7 @@ export function registerKlarnaTools(server) {
           content: [
             {
               type: "text",
-              text: JSON.stringify({ search_url: url, total_results: results.length, results }, null, 2),
+              text: JSON.stringify({ search_url: url, results_on_page: results.length, results }, null, 2),
             },
           ],
         };

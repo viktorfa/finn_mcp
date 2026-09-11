@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { fetchHtml } from "../fetch.js";
+import { parseFinnSearchPaging } from "../finn-search-data.js";
 import { parseMobilityItemDetail, parseMobilitySearchResults } from "../mobility-parse.js";
 
 function buildSearchUrl(subvertical, args, extraParams) {
@@ -24,7 +25,7 @@ async function searchMobility(subvertical, args, extraParams) {
   const url = buildSearchUrl(subvertical, args, extraParams);
   const html = await fetchHtml(url);
   const results = parseMobilitySearchResults(html);
-  return { search_url: url, total_results: results.length, results };
+  return { search_url: url, ...parseFinnSearchPaging(html), results_on_page: results.length, results };
 }
 
 export function registerMobilityTools(server) {

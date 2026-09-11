@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { fetchHtml } from "../fetch.js";
+import { parseFinnSearchPaging } from "../finn-search-data.js";
 import { parseItemDetails, parseSearchResults } from "../torget-parse.js";
 
 export function registerTorgetTools(server) {
@@ -7,7 +8,7 @@ export function registerTorgetTools(server) {
     "search_finn_torget",
     {
       description:
-        "Search for secondhand items on FINN.no Torget (the general marketplace). Supports categories like electronics, clothing, sports, furniture, etc.",
+        "Search for secondhand items on FINN.no Torget (the general marketplace). Supports categories like electronics, clothing, sports, furniture, etc. Returns total_results, page, total_pages, and results_on_page; pagination metadata is null when unavailable.",
       inputSchema: {
         query: z.string().optional().describe("Search query"),
         page: z.coerce.number().optional().describe("Page number"),
@@ -89,7 +90,11 @@ export function registerTorgetTools(server) {
           content: [
             {
               type: "text",
-              text: JSON.stringify({ search_url: url, total_results: results.length, results }, null, 2),
+              text: JSON.stringify(
+                { search_url: url, ...parseFinnSearchPaging(html), results_on_page: results.length, results },
+                null,
+                2,
+              ),
             },
           ],
         };
