@@ -32,7 +32,7 @@
   },
   "homepage": "https://github.com/viktorfa/finn_mcp#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "cheerio": "^1.2.0",
     "zod": "^4.3.6"
   },
