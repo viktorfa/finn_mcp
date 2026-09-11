@@ -45,14 +45,14 @@ describe("parseItemDetails", () => {
     </body></html>`;
     const details = parseItemDetails(html);
 
-    assert.equal(details.key_info["Tilstand"], "Som ny - Ikke synlig brukt");
-    assert.equal(details.key_info["Lengde"], "180 cm");
-    assert.equal(details.key_info["Merke"], "Rossignol");
-    assert.equal(details.key_info["Farge"], "Rød");
+    assert.equal(details.key_info.Tilstand, "Som ny - Ikke synlig brukt");
+    assert.equal(details.key_info.Lengde, "180 cm");
+    assert.equal(details.key_info.Merke, "Rossignol");
+    assert.equal(details.key_info.Farge, "Rød");
   });
 
   it("returns empty key_info for HTML without Nøkkelinfo", () => {
-    const html = '<html><body><h1>No info</h1></body></html>';
+    const html = "<html><body><h1>No info</h1></body></html>";
     const details = parseItemDetails(html);
     assert.deepStrictEqual(details.key_info, {});
   });
