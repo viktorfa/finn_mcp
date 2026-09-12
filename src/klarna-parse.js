@@ -3,11 +3,12 @@ const KLARNA_IMAGE_BASE = "https://www.klarna.com/no/shopping/img";
 
 export function parseKlarnaSearchResults(html) {
   const data = extractDehydratedQueries(html);
-  const serpQuery = data.find((q) => q.queryKey?.[0] === "serp-search");
-  if (!serpQuery) return [];
-
-  const pages = serpQuery.state?.data?.pages ?? [];
-  const products = pages.flatMap((page) => page.products ?? []);
+  const serpQuery = data.find((q) => q?.queryKey?.[0] === "serp-search");
+  const pages = serpQuery?.state?.data?.pages;
+  if (!Array.isArray(pages) || pages.some((page) => !Array.isArray(page?.products))) {
+    throw new Error("Cannot parse Klarna search: expected product pages are missing or malformed");
+  }
+  const products = pages.flatMap((page) => page.products);
 
   return products.map((p) => ({
     id: p.id,
@@ -21,22 +22,71 @@ export function parseKlarnaSearchResults(html) {
     price_drop: p.priceDrop
       ? { old_price: `${p.priceDrop.oldPrice.amount} ${p.priceDrop.oldPrice.currency}`, percent: p.priceDrop.percent }
       : null,
-    out_of_stock: p.outOfStock ?? false,
+    out_of_stock: typeof p.outOfStock === "boolean" ? p.outOfStock : null,
   }));
 }
 
 export function parseKlarnaProductDetail(html) {
   const data = extractDehydratedQueries(html);
 
-  const detailQuery = data.find((q) => q.queryKey?.[0] === "product-detail-initial");
-  const offersQuery = data.find((q) => q.queryKey?.[0] === "product-detail-offers");
-  const priceLevelQuery = data.find((q) => q.queryKey?.[0] === "product-price-level");
+  const detailQuery = data.find((q) => q?.queryKey?.[0] === "product-detail-initial");
+  const offersQuery = data.find((q) => q?.queryKey?.[0] === "product-detail-offers");
+  const priceLevelQuery = data.find((q) => q?.queryKey?.[0] === "product-price-level");
 
   const detail = detailQuery?.state?.data ?? {};
-  const product = detail.product ?? {};
+  const product = detail.product;
+  if (!product || typeof product.name !== "string" || !product.name.trim()) {
+    throw new Error("Cannot parse Klarna product: expected product data is missing or malformed");
+  }
   const brand = detail.brand ?? {};
 
   const offersData = offersQuery?.state?.data ?? {};
+  if (
+    !Array.isArray(offersData.offers) ||
+    (offersData.staticOffers != null && !Array.isArray(offersData.staticOffers))
+  ) {
+    throw new Error("Cannot parse Klarna product: expected offers are missing or malformed");
+  }
+  const seen = new Set();
+  const offers = [...offersData.offers, ...(offersData.staticOffers ?? [])]
+    .filter((offer) => {
+      if (!offer || typeof offer !== "object") {
+        throw new Error("Cannot parse Klarna product: malformed offer");
+      }
+      if (!offer.id) return true;
+      if (seen.has(offer.id)) return false;
+      seen.add(offer.id);
+      return true;
+    })
+    .map((offer) => {
+      const price = parseMoney(offer.price);
+      const shipping = parseMoney(offer.shippingCost);
+      return {
+        id: offer.id ?? null,
+        name: offer.name ?? null,
+        merchant: offersData.merchants?.[offer.merchantId]?.name ?? null,
+        url: offerUrl(offer.productRawUrl) ?? offerUrl(offer.url),
+        price,
+        shipping_cost: shipping,
+        total_price:
+          price && shipping && price.currency === shipping.currency
+            ? { amount: Math.round((price.amount + shipping.amount) * 100) / 100, currency: price.currency }
+            : null,
+        stock_status: typeof offer.stockStatus === "string" ? offer.stockStatus : null,
+        delivery_time: offer.deliveryTime
+          ? {
+              min_days: deliveryDays(offer.deliveryTime.minDays),
+              max_days: deliveryDays(offer.deliveryTime.maxDays),
+            }
+          : null,
+      };
+    })
+    .sort((a, b) => {
+      if (!a.price) return b.price ? 1 : 0;
+      if (!b.price) return -1;
+      return a.price.currency.localeCompare(b.price.currency) || a.price.amount - b.price.amount;
+    });
+
   const merchantFilter = offersData.filters?.find((f) => f.id === "af_MERCHANT");
   const merchants = (merchantFilter?.filterOptions ?? []).map((m) => ({
     name: m.name,
@@ -51,9 +101,10 @@ export function parseKlarnaProductDetail(html) {
     brand: brand.name || null,
     category: detail.category?.name ?? null,
     review_summary: detail.reviewSummary ?? null,
+    offers,
     merchants: merchants.sort((a, b) => {
-      const pa = Number.parseFloat(a.lowest_price) || Infinity;
-      const pb = Number.parseFloat(b.lowest_price) || Infinity;
+      const pa = Number.isFinite(Number.parseFloat(a.lowest_price)) ? Number.parseFloat(a.lowest_price) : Infinity;
+      const pb = Number.isFinite(Number.parseFloat(b.lowest_price)) ? Number.parseFloat(b.lowest_price) : Infinity;
       return pa - pb;
     }),
     price_trend: priceLevel.priceChange
@@ -69,12 +120,39 @@ function extractDehydratedQueries(html) {
     if (!content.startsWith("{")) continue;
     try {
       const data = JSON.parse(content);
-      if (data.__DEHYDRATED_QUERY_STATE__) {
-        return data.__DEHYDRATED_QUERY_STATE__.queries ?? [];
+      if (Array.isArray(data.__DEHYDRATED_QUERY_STATE__?.queries)) {
+        return data.__DEHYDRATED_QUERY_STATE__.queries;
       }
     } catch {
       // not JSON, skip
     }
   }
   return [];
+}
+
+function parseMoney(value) {
+  if (
+    !value ||
+    !["string", "number"].includes(typeof value.amount) ||
+    String(value.amount).trim() === "" ||
+    typeof value.currency !== "string" ||
+    !value.currency
+  )
+    return null;
+  const amount = Number(value.amount);
+  return Number.isFinite(amount) && amount >= 0 ? { amount, currency: value.currency } : null;
+}
+
+function offerUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const url = new URL(value, KLARNA_BASE);
+    return ["https:", "http:"].includes(url.protocol) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function deliveryDays(value) {
+  return Number.isSafeInteger(value) && value >= 0 ? value : null;
 }

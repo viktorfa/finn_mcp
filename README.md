@@ -22,7 +22,7 @@ A Model Context Protocol (MCP) server for searching and browsing Norwegian marke
 
 ### Klarna Price Guide (prisguiden.no)
 - **Search** for new products across Norwegian retailers with lowest prices and price drop alerts
-- **Product details** with all merchant offers sorted by price, and price trend data
+- **Product details** with individual offers, stock status, shipping, delivery estimates, purchase links, and price trend data
 
 ## Usage
 
@@ -119,6 +119,34 @@ Missing or invalid pagination metadata is `null`; it is never inferred from the 
 Klarna searches return `results_on_page` only, since the parsed payload provides no verified total.
 These fields apply to both the CLI and MCP. Consumers that previously used `total_results`
 as a page count should use `results_on_page` instead.
+
+## Offer prices and availability
+
+`get_klarna_product` returns an `offers` array from the offers embedded in the page,
+including sponsored placements, deduplicated by offer ID. It is not a guarantee of
+all offers available from the retailer or on further pages. Each offer contains:
+
+- `id`, `name`, `merchant`, and `url` (a retailer link when supplied, otherwise a Klarna redirect).
+- `price` and `shipping_cost`: `{ "amount": 1290, "currency": "NOK" }`, or `null` when unknown.
+- `total_price`: item price plus reported shipping, only when both are known and use the same currency.
+- `stock_status`: Klarna's explicit status (for example `IN_STOCK`, `OUT_OF_STOCK`, or `BACKORDER`), or `null` when absent.
+- `delivery_time`: `{ "min_days": 2, "max_days": 5 }` with unknown bounds set to `null`, or `null` when absent.
+
+Offers are sorted by item price within each currency, with unknown prices last.
+Out-of-stock offers remain visible; delivery estimates never imply availability.
+Unknown shipping is not free shipping. Totals reflect Klarna's reported shipping,
+not a checkout quote for a particular address or basket. Verify shortlisted offers
+with the retailer before buying.
+
+The existing `merchants` field remains a summary of merchant minimum prices for
+compatibility. Use `offers` for stock and delivered-cost comparisons.
+Klarna search `out_of_stock` is now `true`, `false`, or `null`; missing or invalid
+stock data is no longer treated as `false`.
+
+FINN marketplace searches and Klarna searches distinguish recognised empty results
+from missing or malformed search payloads. Unrecognised pages produce a tool error
+(MCP `isError`; CLI exit status 1 and diagnostics on stderr), rather than an empty
+success. Klarna product pages also require recognised product and offer data.
 
 ## Development
 

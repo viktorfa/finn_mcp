@@ -19,8 +19,8 @@ describe("parseKlarnaSearchResults", () => {
     assert.ok(first.url.includes("klarna.com"), "url should point to klarna");
   });
 
-  it("returns empty array for empty HTML", () => {
-    assert.deepStrictEqual(parseKlarnaSearchResults("<html></html>"), []);
+  it("rejects unrecognised HTML", () => {
+    assert.throws(() => parseKlarnaSearchResults("<html></html>"), /Cannot parse/);
   });
 });
 

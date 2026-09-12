@@ -36,7 +36,7 @@ export function registerKlarnaTools(server) {
     "get_klarna_product",
     {
       description:
-        "Get details of a specific product on Klarna Price Guide, including all merchant offers with prices sorted cheapest first, and price trend data.",
+        "Get product details and offers present in the Klarna page, including stock status, shipping, delivery estimates and purchase links. Offers are sorted by item price within each currency, not delivered cost; unknown fields are null. Prices and availability are reported by Klarna, not verified with retailers.",
       inputSchema: {
         url: z
           .string()

@@ -2,7 +2,9 @@ import * as cheerio from "cheerio";
 import { extractFinnSearchData } from "./finn-search-data.js";
 
 export function parseSearchResults(html) {
-  const docs = extractFinnSearchData(html)?.docs ?? [];
+  const data = extractFinnSearchData(html);
+  if (!data) throw new Error("Cannot parse FINN search: expected search data is missing or malformed");
+  const docs = data.docs;
 
   return docs.map((doc) => {
     const finnCode = String(doc.id || doc.ad_id);

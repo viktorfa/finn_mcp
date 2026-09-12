@@ -18,9 +18,8 @@ describe("parseSearchResults", () => {
     assert.ok(first.url.includes("finn.no"), "result url should point to finn.no");
   });
 
-  it("returns empty array for empty HTML", () => {
-    const results = parseSearchResults("<html><body></body></html>");
-    assert.deepStrictEqual(results, []);
+  it("rejects unrecognised HTML", () => {
+    assert.throws(() => parseSearchResults("<html></html>"), /Cannot parse/);
   });
 });
 

@@ -29,8 +29,8 @@ describe("parseMobilitySearchResults", () => {
     assert.ok(first.heading, "should have heading");
   });
 
-  it("returns empty array for empty HTML", () => {
-    assert.deepStrictEqual(parseMobilitySearchResults("<html></html>"), []);
+  it("rejects unrecognised HTML", () => {
+    assert.throws(() => parseMobilitySearchResults("<html></html>"), /Cannot parse/);
   });
 });
 

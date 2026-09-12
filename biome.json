@@ -11,6 +11,6 @@
     }
   },
   "files": {
-    "includes": ["**", "!!test/fixtures"]
+    "includes": ["**", "!!test/fixtures", "!!local_files"]
   }
 }

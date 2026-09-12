@@ -5,7 +5,7 @@ import test from "node:test";
 function run(args, response = { status: 200 }) {
   const setup = `import { readFileSync } from "node:fs";
     globalThis.fetch = async () => new Response(
-      ${response.body === undefined ? 'readFileSync("test/fixtures/search.html", "utf8")' : JSON.stringify(response.body)},
+      ${response.body === undefined ? `readFileSync(${JSON.stringify(response.fixture ?? "test/fixtures/search.html")}, "utf8")` : JSON.stringify(response.body)},
       { status: ${response.status} });`;
   return spawnSync(
     process.execPath,
@@ -88,4 +88,24 @@ test("CLI reports upstream failures on stderr with a failing exit status", () =>
   assert.equal(result.status, 1);
   assert.equal(result.stdout, "");
   assert.match(result.stderr, /503/);
+});
+
+test("CLI emits offer data as JSON and reports unrecognised pages only on stderr", () => {
+  const args = ["get_klarna_product", "--url", "https://www.klarna.com/no/shopping/test"];
+  const success = run(args, {
+    status: 200,
+    fixture: "test/fixtures/klarna-detail.html",
+  });
+  assert.equal(success.status, 0, success.stderr);
+  assert.equal(success.stderr, "");
+  const { offers } = JSON.parse(success.stdout);
+  assert.equal(offers.length, 9);
+  assert.equal(offers[0].stock_status, "OUT_OF_STOCK");
+  assert.equal(offers[0].total_price.amount, 1258);
+  for (const command of [args, ["search_finn_torget"], ["search_klarna", "--query", "test"]]) {
+    const failure = run(command, { status: 200, body: "<html>Verify you are human</html>" });
+    assert.equal(failure.status, 1);
+    assert.equal(failure.stdout, "");
+    assert.match(failure.stderr, /Cannot parse/);
+  }
 });
