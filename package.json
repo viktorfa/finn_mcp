@@ -40,5 +40,10 @@
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^2.5.12"
+  },
+  "pnpm": {
+    "overrides": {
+      "fast-uri": "4.1.3"
+    }
   }
 }
